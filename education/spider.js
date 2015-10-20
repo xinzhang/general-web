@@ -1,52 +1,50 @@
-var http = require('http');
 
+var MongoClient = require('mongodb').MongoClient;
+var url = 'mongodb://localhost:27017/education';
+var async = require('async');
+var request = require('request');
+var fs = require('fs');
 
-var url = 'http://www.bettereducation.com.au/school/Primary/nsw/nsw_top_primary_schools.aspx';
+MongoClient.connect(url, function(err, db){	
+	console.log("Connected correctly to server.");
 
-// function getSchools() {
-// 	http.get({
-// 		host: '192.168.11.22',
-// 		port: 8080,
-// 		path: ''url'',
-// 		headers : {
-// 			Host: 'www.bettereducation.com.au'
-// 		}
-// 	}, function(resp){
-// 		var body = '';
-// 		resp.on('data', function(d) {
-//             body += d;
-//         });		
-// 		resp.on('end', function() {
-// 			console.log(body);
-// 		})
-// 	});
-// }
+	var cnt = 0;
 
-// getSchools();
+	var list = db.collection('schools').find({}).limit(1);
 
-// var req = http.request({
-// 	host: '192.168.11.22',
-// 	port: 8080,
-// 	method: 'GET',
-// 	path: 'http://www.google.com:8080'
-// }, function(resp) {
-// 	resp.on('data',function(data){
-// 		console.log(data.toString());
-// 	});
-// });
+// 	async.forEach(list, function(item, callback){
+// 		console.log(item.link);		
+// 		cnt++;	
+// //		callback();
 
-// req.end();
+// 	}, function(err){
+// 		console.log('iterating done');
+// 	})
 
- var request = require('request');
+	list.toArray(function(err, result) {
+		for (var i=0;i<result.length;i++)
+		{
+			var link = result[i].link;
+			var detailUrl = 'http://www.bettereducation.com.au' + link.substr(8);
+			console.log('send request to ' + detailUrl);
 
- request({'url':'http://www.bettereducation.com.au/school/Primary/nsw/nsw_top_primary_schools.aspx',
-         'proxy':'http://192.168.11.22:8080'}, function (error, response, body) {
-     if (!error && response.statusCode == 200) {
-         console.log(body);
-     }
-     else
-     {
-     	console.log(error);
-     }
+			request({'url':detailUrl,
+     				 'proxy':'http://192.168.11.22:8080'}, function (error, response, body) {
+				     if (!error && response.statusCode == 200) {
+				         //console.log(body);
+				         //fs.writeFile('test.htm', body);
+				     }
+				     else
+				     {
+				     	console.log(response.statusCode);
+				     	console.log(error);
+				     }
+			});
+		}
+
+		db.close();
+	});
+
+	//db.close();
 });
 
